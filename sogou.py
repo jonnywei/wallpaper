@@ -6,15 +6,17 @@ import os
 
 class SouGou():
     CONFIG_RCD_GZ_URL ='http://dl.bizhi.sogou.com/ini/config.rcd.1.1b.ini.gz?time=1374480774&h=D5950D793073C43D32066B4BB8126F82&v=1.5.0.0921&r=0000_sogou_wallpaper_1.5&rreal=0000_sogou_wallpaper_1.5&rov=6.1.7601_1_1&ov=6.1.7601_1.0_1_256_1&widht=1920&height=1080'
-    DOWNLOAD_URL='http://download.bizhi.sogou.com/download.php?id=340459&width=1920&height=1080&src=1&h=D5950D793073C43D32066B4BB8126F82&v=1.5.0.0921&r=0000_sogou_wallpaper_1.5&rreal=0000_sogou_wallpaper_1.5&rov=6.1.7601_1_1&ov=6.1.7601_1.0_1_256_1'
+    DOWNLOAD_URL='http://download.bizhi.sogou.com/download.php?id=%s&width=%s&height=%s&src=1&h=D5950D793073C43D32066B4BB8126F82&v=1.5.0.0921&r=0000_sogou_wallpaper_1.5&rreal=0000_sogou_wallpaper_1.5&rov=6.1.7601_1_1&ov=6.1.7601_1.0_1_256_1'
     RES_DIR = '.wallpaper'
     WALLPAPER_DIR =  RES_DIR +'/wallpaper'
+    LARGE_DIR  =  WALLPAPER_DIR + '/large'
     RES_CACHE=None 
 
     
     def __init__(self):
         make_dir(self.RES_DIR)
         make_dir(self.WALLPAPER_DIR)
+        make_dir(self.LARGE_DIR    )
         pass
 
     def getResContent(self):
@@ -33,9 +35,12 @@ class SouGou():
         return self.RES_CACHE
     
         
-    def downloadImg(self):
-        img_res = get_content_from_url(self.DOWNLOAD_URL)
-        f = file(get_absoulte_dir(self.WALLPAPER_DIR+'/test.jpeg'),'wb').write(img_res)
+    def downloadLargeImg(self, imgId, width, height):
+        img_url = self.DOWNLOAD_URL % (imgId, width, height)
+        img_res = get_content_from_url(img_url)
+        large_img_save_dir = get_absoulte_dir(self.LARGE_DIR+'/%s' % imgId)
+        f = file(large_img_save_dir,'wb').write(img_res)
+        return large_img_save_dir
 
     def downloadImageAndSave(self, imageUrl):
         #imageUrl = 'http://imgstore.cdn.sogou.com/app/a/11220002/349351_s_90_2.webp'
@@ -70,7 +75,7 @@ if __name__ == '__main__':
     for img in img_list:
         print img
     i = 0 
-    while i < 50:
+    while i < 0:
         sg.downloadImageAndSave(img_list[i])
         i = i + 1 
         
