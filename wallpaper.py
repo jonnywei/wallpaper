@@ -111,8 +111,10 @@ class ChooseImgDialog(Gtk.Dialog):
 
         
 
-        #img_path = get
-        large_img_save_dir = sougou.downloadLargeImg('350998', getScreenResolution()[0] ,getScreenResolution()[1])
+        img_name = os.path.basename(img_path)
+        img_id = img_name.split('_')[0]
+        large_img_save_dir = sougou.downloadLargeImg(img_id, getScreenResolution()[0] ,getScreenResolution()[1])
+        
         print large_img_save_dir 
         box = self.get_content_area()
         try:
