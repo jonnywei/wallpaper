@@ -4,18 +4,32 @@
 
 #
 
-from gi.repository import Gtk, Gdk, GdkPixbuf, GLib, Gio, GObject
-
+from gi.repository import Gtk, Gdk, GdkPixbuf, GLib, Gio, GObject,Notify
 from os import path
+import os
+import threading
+
+from sogou import SouGou
+
+import util
+import screen
+import changeWallpaper
 
 sougou = SouGou()
 
 large_img_save_dir = None
 
+
 class WallpaperApp:
 
     def __init__(self):
 
+        GLib.threads_init()
+
+        if not Notify.init("WallpaperApp"):
+            raise ImportError("Couldn't initialize libnotify")
+  
+         
         self.window = Gtk.Window(title= '搜狗壁纸')
         self.window.connect('delete-event',Gtk.main_quit)
         self.window.set_border_width(8)
@@ -44,7 +58,7 @@ class WallpaperApp:
         i = 0
         left = 0
         top  = 0
-        for file in list_wallpaper_file():
+        for file in util.list_wallpaper_file():
             
             left = (i) /6 
             top  = (i) % 6
@@ -84,42 +98,76 @@ class WallpaperApp:
         self.grid.attach(frame,left, top, width ,height)
 
     def on_image_clicked(self, widget, event,img_path):
+          
+        print 'clicked'
+         
         choose_img_dialog = ChooseImgDialog(self.window,img_path)
+        #choose_img_dialog.action_area.remove(Gtk.STOCK_CANCEL)
      
         response = choose_img_dialog.run()
 
+        
+        
+        #choose_img_dialog.
         if response == Gtk.ResponseType.OK:
-            changeWallpaper('/home/wjj/.wallpaper/wallpaper/large/350998')
-            print "The OK button was clicked"
+            cwthread =  ChangeWallpaperThread(choose_img_dialog.large_img_id )
+            cwthread.start()
+            #changeWallpaper('/home/wjj/.wallpaper/wallpaper/large/350998')
+            #success_notification = Notify.Notification.new ("搜狗壁纸","正在为您下载壁纸...","dialog-information")
+            #success_notification.set_hint("transient", GLib.Variant.new_boolean(True))   #Gnome3 transient
+            #success_notification.set_urgency(Notify.Urgency.NORMAL)
+            #success_notification.set_timeout(3000)
+            
+            #success_notification.show () 
         elif response == Gtk.ResponseType.CANCEL:
+            
+            
+            
             print "The Cancel button was clicked"
 
         choose_img_dialog.destroy()
-         
-        print 'clicked'
+       
+     
 
+class ChangeWallpaperThread(threading.Thread):
+    def __init__(self,large_img_id):
+        threading.Thread.__init__(self)
+        self._large_img_id = large_img_id
 
+    def run(self):
+        scr = screen.getScreenResolution()
+        large_img_save_dir = sougou.downloadLargeImg(self._large_img_id , scr[0] ,scr[1])
+        changeWallpaper.changeWallpaper(large_img_save_dir)
+
+        success_notification = Notify.Notification.new ("搜狗壁纸","您的壁纸已经设置成功!","/home/wjj/success.png")
+        success_notification.set_hint("transient", GLib.Variant.new_boolean(True))   #Gnome3 transient
+        success_notification.set_urgency(Notify.Urgency.NORMAL)
+        success_notification.set_timeout(3000)
+            
+        success_notification.show () 
+        print "Change Wallpaper OK"
+        
 #dialog box
 
 class ChooseImgDialog(Gtk.Dialog):
     def __init__(self, parent,img_path):
         Gtk.Dialog.__init__(self, "设置壁纸", parent, 0,
-            (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-             Gtk.STOCK_OK, Gtk.ResponseType.OK))
+            (Gtk.STOCK_OK, Gtk.ResponseType.OK ,Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL))
 
         self.set_default_size(400, 400)
-
         
-
+        
         img_name = os.path.basename(img_path)
         img_id = img_name.split('_')[0]
-        large_img_save_dir = sougou.downloadLargeImg(img_id, getScreenResolution()[0] ,getScreenResolution()[1])
-        
-        print large_img_save_dir 
+        self.large_img_id = img_id
+       
+        #print large_img_save_dir
+        self.img_path = img_path
         box = self.get_content_area()
         try:
            
-            pixbuf = GdkPixbuf.Pixbuf.new_from_file(img_path)
+            pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(self.img_path,800,600,True)
+            #pixbuf.scale_simple(200, 200,1)
         except GObject.GError as e:
             dialog = Gtk.MessageDialog(self.window,
                                        Gtk.DialogFlags.DESTROY_WITH_PARENT,
@@ -133,7 +181,19 @@ class ChooseImgDialog(Gtk.Dialog):
         image = Gtk.Image.new_from_pixbuf(pixbuf)
         
         box.add(image)
+
+        #self.connect('size_allocate' ,self.resize_event)
         self.show_all()
+
+    def resize_event(self, wiget ,event):
+        
+        
+        box = self.get_content_area()
+        pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(self.img_path,self.get_allocated_width(),self.get_allocated_height(),True)
+        image = Gtk.Image.new_from_pixbuf(pixbuf)
+        box.clear()
+        box.add(image)
+
 
 
 if __name__ =='__main__':
