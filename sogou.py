@@ -54,11 +54,11 @@ class SouGou():
         temp.reverse()
         fileName= temp[0]
         filePath = get_absoulte_dir(self.WALLPAPER_DIR+'/'+fileName)
-        print filePath
+        print 'filePath', filePath
         f = file(filePath,'wb').write(img_res)
         new_file_path = filePath + '.png'
-        convert_webp_to_png(filePath, new_file_path)
-        return filePath
+        util.convert_webp_to_png(filePath, new_file_path)
+        return new_file_path
         
 
     def getImgList(self):
@@ -79,7 +79,7 @@ if __name__ == '__main__':
     for img in img_list:
         print img
     i = 0 
-    while i < 0:
+    while i < 100:
         sg.downloadImageAndSave(img_list[i])
         i = i + 1 
         
