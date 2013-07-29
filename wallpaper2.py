@@ -19,7 +19,7 @@ import util
 import screen
 import changeWallpaper
 import image_event_box  
-
+import random
 
 
 
@@ -57,38 +57,55 @@ class WallpaperApp:
 
         self.queue = Queue.Queue()
 
-        self.show_wallpaper_page_size = 50
+        self.show_wallpaper_page_size = 10
         
         self.wallpaper_file_list = sougou.getImgList()
         self.current_image_count = 0
 
         self.executor = ThreadPool(processes = 20)
         
-        ltit = LoadThumbImageThread(self,  self.wallpaper_file_list, self.current_image_count)
-        ltit.run()
-        
-        i = 0
-        left = 0
-        top  = 0
-        for file in self.wallpaper_file_list:
+        #ltit = LoadThumbImageThread(self,  self.wallpaper_file_list, self.current_image_count)
+        #ltit.run()
+
+        self.init_download_thumb_image()
+        self.dynamic_show_wallpaper()
+        #i = 0
+        #left = 0
+        #top  = 0
+        #for file in self.wallpaper_file_list:
             
-            left = (i) /5 
-            top  = (i) % 5
-            print left , top
+            #left = (i) /5 
+            #top  = (i) % 5
+            #print left , top
             
-            self.addImage(file, top, left, 1, 1)
-            i =  i+1
-            if i > 100:
-                break
+            #self.addImage(file, top, left, 1, 1)
+            #i =  i+1
+            #if i >self.show_wallpaper_page_size-10:
+            ##    break
 
         #
         
 
         
         
-        GObject.timeout_add(300, self.dynamic_show_wallpaper)
-        self.window.show_all()
-
+        #GObject.timeout_add(1000, self.dynamic_show_wallpaper)
+        #self.window.show_all()
+    
+    def init_download_thumb_image(self):
+        print "init_download_thumb_image"
+        i = 0
+        rand =random.Random()
+        total = len(self.wallpaper_file_list)
+        start = int (rand.random() * total)
+        if start + self.show_wallpaper_page_size > total:
+            start = total - self.show_wallpaper_page_size
+        new_wallpaper_file_list =  self.wallpaper_file_list[ start:]
+        for file in new_wallpaper_file_list:
+            #self.executor.apply_async( self.download_thumb_image, (file,) )
+            self.download_thumb_image(file)
+            i =  i+1
+            if i >= self.show_wallpaper_page_size:
+                break
         
 
     
@@ -236,7 +253,6 @@ class WallpaperApp:
         self.window.hide()
     def show_window(self, event):
         self.__init__()
-        
         self.window.show_all()
     def quit_program(self,event):
         Gtk.main_quit()
