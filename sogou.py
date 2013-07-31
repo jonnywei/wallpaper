@@ -48,16 +48,20 @@ class SouGou():
 
     def downloadImageAndSave(self, imageUrl):
         #imageUrl = 'http://imgstore.cdn.sogou.com/app/a/11220002/349351_s_90_2.webp'
-        img_res = get_content_from_url(imageUrl)
         print imageUrl
         temp = imageUrl.split("/")
         temp.reverse()
         fileName= temp[0]
         filePath = get_absoulte_dir(self.WALLPAPER_DIR+'/'+fileName)
         print 'filePath', filePath
-        f = file(filePath,'wb').write(img_res)
         new_file_path = filePath + '.png'
-        util.convert_webp_to_png(filePath, new_file_path)
+        #png_file = file(new_file_path,'r')
+        if os.path.isfile(new_file_path):
+            print 'exist ,skip download \n'
+        else:
+            img_res = get_content_from_url(imageUrl)
+            f = file(filePath,'wb').write(img_res)
+            util.convert_webp_to_png(filePath, new_file_path)
         return new_file_path
         
 

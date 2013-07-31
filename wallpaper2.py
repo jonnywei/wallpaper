@@ -26,6 +26,8 @@ import random
 sougou = SouGou()
 
 large_img_save_dir = None
+program_icon_file = '/home/wjj/.wallpaper/sogou.ico'
+show_wallpaper_page_size = 10
 
 class WallpaperApp:
 
@@ -42,7 +44,7 @@ class WallpaperApp:
         self.window.connect('delete-event',self.hidden_window)
         self.window.set_border_width(8)
         self.window.set_size_request(1024,768)
-        
+        self.window.set_icon_from_file(program_icon_file)
         
         self.grid = Gtk.Grid( )
         self.grid.set_border_width(8)
@@ -56,13 +58,15 @@ class WallpaperApp:
             self.base_path = path.join('', self.base_path)
 
         self.queue = Queue.Queue()
-
-        self.show_wallpaper_page_size = 10
+        #global show_wallpaper_page_size
+        self.show_wallpaper_page_size = show_wallpaper_page_size
         
         self.wallpaper_file_list = sougou.getImgList()
+        prompt = '-'*40 + str(len (self.wallpaper_file_list))
+        print prompt
         self.current_image_count = 0
 
-        self.executor = ThreadPool(processes = 20)
+        #self.executor = ThreadPool(processes = 20)
         
         #ltit = LoadThumbImageThread(self,  self.wallpaper_file_list, self.current_image_count)
         #ltit.run()
@@ -93,21 +97,31 @@ class WallpaperApp:
     
     def init_download_thumb_image(self):
         print "init_download_thumb_image"
-        i = 0
+        
         rand =random.Random()
+        #rand.seed
         total = len(self.wallpaper_file_list)
         start = int (rand.random() * total)
         if start + self.show_wallpaper_page_size > total:
             start = total - self.show_wallpaper_page_size
         new_wallpaper_file_list =  self.wallpaper_file_list[ start:]
-        for file in new_wallpaper_file_list:
-            #self.executor.apply_async( self.download_thumb_image, (file,) )
-            self.download_thumb_image(file)
-            i =  i+1
-            if i >= self.show_wallpaper_page_size:
-                break
-        
+        #executor = ThreadPool(processes = 20)
+        #self.executor = ThreadPool(processes = 5)
 
+        i = 0      
+        for file in new_wallpaper_file_list:
+            try:
+            #GObject.idle_add( self.download_thumb_image,  file  )
+            #GObject.apply_async( self.download_thumb_image, (file,) )
+                self.download_thumb_image(file)
+                i =  i+1
+                if i >= self.show_wallpaper_page_size:
+                    break
+            except Exception ,e :
+                print e
+                print 'download' ,file ,'error \n'
+        
+    
     
     #动态的展示
     def dynamic_show_wallpaper(self):
@@ -415,6 +429,12 @@ class ChooseImgDialog(Gtk.Dialog):
 
 
 if __name__ =='__main__':
+
+    #global show_wallpaper_page_size
+    
+    if  len( sys.argv ) > 1:
+        show_wallpaper_page_size  = int (sys.argv[1])
+        print show_wallpaper_page_size
     # init GLib/GObject
     GObject.threads_init()
     #GLib.threads_init()
@@ -433,8 +453,8 @@ if __name__ =='__main__':
                         "indicator-messages",
                         AppIndicator.IndicatorCategory.APPLICATION_STATUS)
     ind.set_status (AppIndicator.IndicatorStatus.ACTIVE)
-    ind.set_attention_icon ("indicator-messages-new")
-    ind.set_icon('/usr/share/indicator-weather/media/icon.png')
+    #ind.set_attention_icon ("indicator-messages-new")
+    ind.set_icon(program_icon_file)
 
   # create a menu
     menu = Gtk.Menu()
